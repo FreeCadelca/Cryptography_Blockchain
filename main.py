@@ -2,6 +2,18 @@ import pprint
 import numpy
 import numpy as np
 
+
+def vec(n: int, a: int) -> list[int]:
+    return [int(i) for i in format(a, f'0{n}b')]
+
+
+def int_v(n: int, a: list[int]) -> int:
+    return int(''.join(map(str, a)), 2)
+
+def MSB(n, z: list[int]) -> list[int]:
+    return z[:n]
+
+
 PI = (252, 238, 221, 17, 207, 110, 49, 22, 251, 196, 250, 218, 35, 197, 4, 77, 233, 119, 240, 219, 147,
       46, 153, 186, 23, 54, 241, 187, 20, 205, 95, 193, 249, 24, 101, 90, 226, 92, 239, 33, 129, 28, 60, 66, 139, 1,
       142, 79, 5, 132, 2, 174, 227, 106, 143, 160, 6, 11, 237, 152, 127, 212, 211, 31, 235, 52, 44, 81, 234, 200, 72,
@@ -58,7 +70,7 @@ def L(v: list[int]) -> list[int]:
     a = [v[i * 64:i * 64 + 64] for i in range(8)]
     res = []
     for i in range(len(a)):  # mb reverse
-        res += [int(k) for k in np.array(a[i]) @ np.array(A_MATRIX)]
+        res += [int(k) % 2 for k in np.array(a[i]) @ np.array(A_MATRIX)]
     return res
 
 
@@ -66,7 +78,7 @@ def S(v: list[int]) -> list[int]:
     a = [int(''.join(map(str, v[i * 8:i * 8 + 8])), 2) for i in range(64)]
     res = []
     for i in range(len(a)):  # mb reverse
-        new_value_bin = bin(PI[a[i]])[2:]
+        new_value_bin = format(PI[a[i]], '08b')
         res += [int(i) for i in new_value_bin]
     return res
 
@@ -75,7 +87,7 @@ def P(v: list[int]) -> list[int]:
     a = [int(''.join(map(str, v[i * 8:i * 8 + 8])), 2) for i in range(64)]
     res = []
     for i in range(len(a)):  # mb reverse
-        new_value_bin = bin(a[TETA[len(a) - i - 1]])[2:]
+        new_value_bin = format(a[TETA[i]], '08b')
         res += [int(i) for i in new_value_bin]
     return res
 
@@ -84,7 +96,11 @@ def E(k: list[int], m: list[int]):
     res = m.copy()
     K_list = [k.copy()]
     for i in range(1, 13):
-        K_list.append(L(P(S(X(K_list[i - 1], C[i - 1])))))
+        KxorC = X(K_list[i - 1], vec(512, C[i - 1]))
+        SKxorC = S(KxorC)
+        PSKxorC = P(SKxorC)
+        LPSKxorC = L(PSKxorC)
+        K_list.append(LPSKxorC)
 
     for i in range(12):
         res = L(P(S(X(K_list[i], res))))
@@ -93,4 +109,57 @@ def E(k: list[int], m: list[int]):
 
 
 def g(n: list[int], h: list[int], m: list[int]) -> list[int]:
-    return X(X(E(L(P(S(X(h, n)))), m), h), m)
+    hXORn = X(h, n)
+    S_hXORn = S(hXORn)
+    PS_hXORn = P(S_hXORn)
+    LPS_hXORn = L(PS_hXORn)
+    ELPS_hXORn = E(LPS_hXORn, m)
+    return X(X(ELPS_hXORn, h), m)
+
+
+def H(M: list[int]):
+    h = IV
+    N = [0] * 512
+    Sigma = N.copy()
+    while not (len(M) < 512):
+        m = M[len(M) - 512:len(M)]
+        M = M[:len(M) - 512]
+        h = g(N, h, m)
+        N = vec(512, (int_v(512, N) + 512) % (2 ** 512))
+        Sigma = vec(512, (int_v(512, Sigma) + int_v(512, m)) % (2 ** 512))
+    m = [0] * (511 - len(M)) + [1] + M
+    h = g(N, h, m)
+    N = vec(512, (int_v(512, N) + len(M)) % (2 ** 512))
+    Sigma = vec(512, (int_v(512, Sigma) + int_v(512, m)) % (2 ** 512))
+    h = g(vec(512, 0), h, N)
+    # 256 bit
+    h = MSB(256, g(vec(512, 0), h, Sigma))
+    return h
+
+
+msg = 0xfbe2e5f0eee3c820fbeafaebef20fffbf0e1e0f0f520e0ed20e8ece0ebe5f0f2f120fff0eeec20f120faf2fee5e2202ce8f6f3ede220e8e6eee1e8f0f2d1202ce8f0f2e5e220e5d1
+
+msg_bits = [int(i) for i in bin(msg)[2:]]
+hash_bits = H(msg_bits)
+hash = int(''.join(map(str, hash_bits)), 2)
+print(hex(hash)[2:])
+
+
+# psxk1m = 0x46433ed624df433e452f5e7d92452f5ed98937e4acd989375f14f117995f14f1C0b64bc266c0b64bbe2d092067be2d09ec4e7ab0e0ec4e7a2cfdea48eb2cfdea
+# psxk1m_bits = [int(i) for i in format(psxk1m, f'0{512}b')]
+# print(len(psxk1m_bits))
+# lpsxk1m_bits = L(psxk1m_bits)
+# print(len(lpsxk1m_bits))
+# print(lpsxk1m_bits)
+# tmp = [''.join(map(str, lpsxk1m_bits[i * 4:i * 4 + 4])) for i in range(128)]
+# tmp = [hex(int(i, 2))[2:] for i in tmp]
+# print(''.join(tmp))
+
+# xk1m = 0x486906c521f45a8f43621cde3bf44599936b10ce2531558642a303de2038858593790ed02b3685585b750fc32cf44d925d6214de3c0585585b730ecb2cf440a5
+# xk1m_bits = [int(i) for i in format(xk1m, f'0{512}b')]
+# sxk1m_bits = S(xk1m_bits)
+# print(len(sxk1m_bits))
+# print(sxk1m_bits)
+# tmp = [''.join(map(str, sxk1m_bits[i * 4:i * 4 + 4])) for i in range(128)]
+# tmp = [hex(int(i, 2))[2:] for i in tmp]
+# print(''.join(tmp))
