@@ -51,7 +51,6 @@ def gost_hash(string: str, isHex=False):
             new_line += j_to_bits
         A_MATRIX.append(new_line)
 
-
     def vec(n: int, a: int) -> list[int]:
         return [int(i) for i in format(a, f'0{n}b')]
 
@@ -132,7 +131,7 @@ def gost_hash(string: str, isHex=False):
     s_bits = []
     if not isHex:
         bytes_utf8 = string.encode('utf-8')
-        print(bytes_utf8)
+        # print(bytes_utf8)
         for byte in bytes_utf8:
             s_bits += [int(bit) for bit in bin(byte)[2:].zfill(8)]
     else:
@@ -146,6 +145,8 @@ def gost_hash(string: str, isHex=False):
         ]
     )
 
-# msg = '323130393837363534333231303938373635343332313039383736353433323130393837363534333231303938373635343332313039383736353433323130'
-# hash = gost_hash(msg, isHex=True)
-# print(hash)
+
+if __name__ == "__main__":
+    msg = '323130393837363534333231303938373635343332313039383736353433323130393837363534333231303938373635343332313039383736353433323130'
+    hash = gost_hash(msg, isHex=True)
+    print(hash)
