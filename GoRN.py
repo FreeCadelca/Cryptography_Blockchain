@@ -4,7 +4,6 @@ name_of_student = "Kuleshov Dmitriy Sergeevich BIB233"
 name_of_student_hex = ''.join(hex(byte)[2:] for byte in name_of_student.encode('utf-8'))
 name_of_student_hex += '0' * (128 - len(name_of_student_hex))
 
-
 # print(f'hex view of student\'s personal string: {name_of_student_hex}')
 
 
@@ -22,7 +21,7 @@ class RandomGenerator:
         return gost_hash(new_input_for_hash, isHex=True)
 
 
+my_random = RandomGenerator()
 if __name__ == "__main__":
-    my_random = RandomGenerator()
     for i in range(10):
         print(my_random.generate_random())
