@@ -8,7 +8,7 @@ name_of_student_hex += '0' * (128 - len(name_of_student_hex))
 # print(f'hex view of student\'s personal string: {name_of_student_hex}')
 
 
-class Random_generator:
+class RandomGenerator:
     def __init__(self):
         self.iteration = 0
         self.h0 = gost_hash(name_of_student_hex, isHex=True)
@@ -18,11 +18,11 @@ class Random_generator:
     def generate_random(self):
         self.iteration += 1
         new_input_for_hash = self.h0 + hex(self.iteration)[2:]
-        new_input_for_hash += '0' * (512 - len(new_input_for_hash))  # дополнение до 512 бит
+        new_input_for_hash += '0' * (512 - len(new_input_for_hash))  # дополнение нулями до 512 бит
         return gost_hash(new_input_for_hash, isHex=True)
 
 
 if __name__ == "__main__":
-    my_random = Random_generator()
+    my_random = RandomGenerator()
     for i in range(10):
         print(my_random.generate_random())
