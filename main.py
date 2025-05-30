@@ -1,4 +1,3 @@
-from gost_hash import gost_hash
 from GoRN import *
 from schnorr_signature import SchnorrSignature
 
@@ -17,11 +16,12 @@ def sum_of_hashes(h1: str, h2: str):
     return hex((int(h1, 16) + int(h2, 16)) % (2 ** 256))[2:]
 
 
+# Generation of transactions
 signature_algorythm = SchnorrSignature()
 transactions = [generate_transaction("Dmitriy Kuleshov BIB233")] + [generate_transaction() for _ in range(5)]
 signatured_transactions = [signature_algorythm.create_signature(transaction) for transaction in transactions]
 
-# Using second type
+# Using the second way to calculate the tree is when the number of transactions is not a power of two.
 Merkle_tree = [gost_hash(transaction) for transaction in transactions]
 # Now, Merkle Tree list: [H1, H2, H3, H4, H5]
 Merkle_tree.append(gost_hash(sum_of_hashes(Merkle_tree[0], Merkle_tree[1])))
